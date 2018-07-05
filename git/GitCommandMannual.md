@@ -1,3 +1,5 @@
+## 一、安装和配置
+
 1、安装： (下载了Xcode会安装生成git环境)
 
 ```shell
@@ -25,6 +27,8 @@ ssh-keygen-t  rsa-C  “你的GitHub邮箱” ---   这就生成了一个id_rsa.
 ssh-keygen -t  rsa -C  "你的GitHub邮箱" #生成SSH key
 ssh  -T git@github.com #测试ssh密匙是否生效
 ```
+
+## 二、常用操作
 
 5、本地新建一个空仓库：mkdir testgit , cd testgit , git init  (这时打开testgit文件会看见一个.git的文件，这个文件里面会把所有的信息都存储在其中)
 
@@ -61,7 +65,11 @@ git push origin localbranch:remotebranch
 
 11、 查看状态：git status
 
-12、版本回退：
+12、撤销对文件的修改：git checkout 文件名
+
+## 三、版本回退
+
+13、版本回退：
 
 回到当前版本，放弃所有的没有提交的修改：git reset --hard HEAD
 
@@ -71,7 +79,7 @@ git push origin localbranch:remotebranch
 
 回到指定版本：git reset "版本号"
 
-13、撤销对文件的修改：git checkout 文件名
+## 四、分支管理
 
 14、新建分支：git branch “新分支名”
 
