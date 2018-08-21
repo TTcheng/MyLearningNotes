@@ -96,7 +96,7 @@ String(new Date())// 返回 Thu Jul 17 2014 15:38:19 GMT+0200
 true.toString()      // 返回 "true" 
 obj.toString() 
 ```
-将其他类型转换为Number
+### 将其他类型转换为Number
 
 ```js
 //方法1

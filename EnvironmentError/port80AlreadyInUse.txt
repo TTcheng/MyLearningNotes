@@ -1,0 +1,4 @@
+1、cmd -> netstat -ano|findstr "80" 查看80端口是否被使用
+
+
+2、停止IIS服务 | 停止占用进程 | System：cmd --> regedit HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlset\Services\HTTP   修改start为0
