@@ -183,6 +183,21 @@ $(document).ready(function(){
 $('#employee option:not(:first)').remove();//选择除第一个子元素以外的所有元素
 ```
 
+## 常见问题
+
+### 1、重复绑定：
+
+当绑定事件的语句被重复执行时，jQuery会重复绑定相同的事件，导致事件重复触发
+
+解决办法，使用**$(selector).off('event').on('event',function(){...});**
+
+```js
+//$("#wfxw").change(function () {...}）
+$("#wfxw").off('change').on('change',function () {...}）
+```
+
+
+
 
 
 
