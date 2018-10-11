@@ -140,7 +140,7 @@ PersonMapper mapper = session.getMapper(PersonMapper.class);
 Person person = mapper.selectPerson(101);
 ```
 
-对于简单语句来说，注解使代码显得更加简洁，**然而 Java 注解对于稍微复杂的语句就会力不从心并且会显得更加混乱**。因此，如果你需要做很复杂的事情，那么最好使用 XML 来映射语句。
+对于简单语句来说，注解使代码显得更加简洁，**然而 Java 注解对于稍微复杂的语句就会力不从心并且会显得更加混乱，另外SQL和代码耦合在一起不利于维护**。因此，如果你需要做很复杂的事情，那么最好使用 XML 来映射语句。
 
 ## 二、MyBatis的几个重要概念
 
@@ -444,12 +444,160 @@ SQL 映射文件有很少的几个顶级元素（按照它们应该被定义的�
 - `cache` – 给定命名空间的缓存配置。         
 - `cache-ref`– 其他命名空间缓存配置的引用。         
 - `resultMap`  – 是最复杂也是最强大的元素，用来描述如何从数据库结果集中来加载对象。
-- `parameterMap`– 已废弃！老式风格的参数映射。内联参数是首选,这个元素可能在将来被移除，这里不会记录。 
+- ~~`parameterMap`– 已废弃！老式风格的参数映射。内联参数是首选,这个元素可能在将来被移除，这里不会记录。~~ 
 - `sql` – 可被其他语句引用的可重用语句块。         
-- `nsert`   – 映射插入语句         
+- `insert`   – 映射插入语句         
 - `update` – 映射更新语句         
 - `delete` – 映射删除语句         
 - `select` – 映射查询语句         
 
 接下来看具体的元素。
 
+### SELECT
+
+```xml
+<select id="selectPerson" parameterType="int" resultType="hashmap">
+  SELECT * FROM PERSON WHERE ID = #{id}
+</select>
+```
+
+SELECT元素的属性
+
+| 属性             | 描述                                                         |
+| ---------------- | ------------------------------------------------------------ |
+| `id`             | 在命名空间中唯一的标识符，可以被用来引用这条语句。           |
+| `parameterType`  | 将会传入这条语句的参数类的完全限定名或别名。这个属性是可选的，因为 MyBatis 可以通过 TypeHandler 推断出具体传入语句的参数，默认值为 unset。 |
+| ~~parameterMap~~ | ~~这是引用外部 parameterMap 的已经被废弃的方法。使用内联参数映射和 parameterType 属性。~~ |
+| `resultType`     | 从这条语句中返回的期望类型的类的完全限定名或别名。注意如果是集合情形，那应该是集合可以包含的类型，而不能是集合本身。使用 resultType 或 resultMap，但不能同时使用。 |
+| `resultMap`      | 外部 resultMap 的命名引用。结果集的映射是 MyBatis 最强大的特性，对其有一个很好的理解的话，许多复杂映射的情形都能迎刃而解。使用 resultMap 或 resultType，但不能同时使用。 |
+| `flushCache`     | 将其设置为 true，任何时候只要语句被调用，都会导致本地缓存和二级缓存都会被清空，默认值：false。 |
+| `useCache`       | 将其设置为 true，将会导致本条语句的结果被二级缓存，默认值：对 select 元素为 true。 |
+| `timeout`        | 这个设置是在抛出异常之前，驱动程序等待数据库返回请求结果的秒数。默认值为 unset（依赖驱动）。 |
+| `fetchSize`      | 这是尝试影响驱动程序每次批量返回的结果行数和这个设置值相等。默认值为 unset（依赖驱动）。 |
+| `statementType`  | STATEMENT，PREPARED 或 CALLABLE 的一个。这会让 MyBatis 分别使用 Statement，PreparedStatement 或 CallableStatement，默认值：PREPARED。 |
+| `resultSetType`  | FORWARD_ONLY，SCROLL_SENSITIVE 或 SCROLL_INSENSITIVE 中的一个，默认值为 unset （依赖驱动）。 |
+| `databaseId`     | 如果配置了 databaseIdProvider，MyBatis 会加载所有的不带 databaseId 或匹配当前 databaseId 的语句；如果带或者不带的语句都有，则不带的会被忽略。 |
+| `resultOrdered`  | 这个设置仅针对嵌套结果 select 语句适用：如果为 true，就是假设包含了嵌套结果集或是分组了，这样的话当返回一个主结果行的时候，就不会发生有对前面结果集的引用的情况。这就使得在获取嵌套的结果集的时候不至于导致内存不够用。默认值：`false`。 |
+| `resultSets`     | 这个设置仅对多结果集的情况适用，它将列出语句执行后返回的结果集并每个结果集给一个名称，名称是逗号分隔的。 |
+
+### INSERT、UPDATE、DELETE
+
+元素属性
+
+| 属性               | 描述                                                         |
+| ------------------ | ------------------------------------------------------------ |
+| `id`               | 命名空间中的唯一标识符，可被用来代表这条语句。               |
+| `parameterType`    | 将要传入语句的参数的完全限定类名或别名。这个属性是可选的，因为 MyBatis 可以通过 TypeHandler 推断出具体传入语句的参数，默认值为 unset。 |
+| ~~`parameterMap`~~ | ~~这是引用外部 parameterMap 的已经被废弃的方法。使用内联参数映射和 parameterType 属性。~~ |
+| `flushCache`       | 将其设置为 true，任何时候只要语句被调用，都会导致本地缓存和二级缓存都会被清空，默认值：true（对应插入、更新和删除语句）。 |
+| `timeout`          | 这个设置是在抛出异常之前，驱动程序等待数据库返回请求结果的秒数。默认值为 unset（依赖驱动）。 |
+| `statementType`    | STATEMENT，PREPARED 或 CALLABLE 的一个。这会让 MyBatis 分别使用 Statement，PreparedStatement 或 CallableStatement，默认值：PREPARED。 |
+| `useGeneratedKeys` | （仅对 insert 和 update 有用）这会令 MyBatis 使用 JDBC 的 getGeneratedKeys 方法来取出由数据库内部生成的主键（比如：像 MySQL 和 SQL Server 这样的关系数据库管理系统的自动递增字段），默认值：false。 |
+| `keyProperty`      | （仅对 insert 和 update 有用）唯一标记一个属性，MyBatis 会通过 getGeneratedKeys 的返回值或者通过 insert 语句的 selectKey 子元素设置它的键值，默认：`unset`。如果希望得到多个生成的列，也可以是逗号分隔的属性名称列表。 |
+| `keyColumn`        | （仅对 insert 和 update 有用）通过生成的键值设置表中的列名，这个设置仅在某些数据库（像 PostgreSQL）是必须的，当主键列不是表中的第一列的时候需要设置。如果希望得到多个生成的列，也可以是逗号分隔的属性名称列表。 |
+| `databaseId`       | 如果配置了 databaseIdProvider，MyBatis 会加载所有的不带 databaseId 或匹配当前 databaseId 的语句；如果带或者不带的语句都有，则不带的会被忽略 |
+
+示例
+
+```xml
+<insert id="insertAuthor">
+  insert into Author (id,username,password,email,bio)
+  values (#{id},#{username},#{password},#{email},#{bio})
+</insert>
+
+<update id="updateAuthor">
+  update Author set
+    username = #{username},
+    password = #{password},
+    email = #{email},
+    bio = #{bio}
+  where id = #{id}
+</update>
+
+<delete id="deleteAuthor">
+  delete from Author where id = #{id}
+</delete>
+```
+
+### sql
+
+这个元素可以被用来定义可**重用**的 SQL 代码段，可以包含在其他语句中。它可以被静态地(在加载参数) 参数化. 不同的属性值通过包含的实例变化. 比如
+
+```xml
+<sql id="userColumns"> ${alias}.id,${alias}.username,${alias}.password </sql>
+```
+
+这个 SQL 片段可以被包含在其他语句中，例如：
+
+```xml
+<select id="selectUsers" resultType="map">
+  select
+    <include refid="userColumns"><property name="alias" value="t1"/></include>,
+    <include refid="userColumns"><property name="alias" value="t2"/></include>
+  from some_table t1
+    cross join some_table t2
+</select>
+```
+
+属性值也可以被用在 include 元素的 refid 属性里或 include 内部语句中，例如
+
+```xml
+<!--属性值被用在include 内部语句-->
+<sql id="sometable">
+  ${prefix}Table
+</sql>
+<!--属性值被用在include元素refid中-->
+<sql id="someinclude">
+  from
+    <include refid="${include_target}"/>
+</sql>
+<select id="select" resultType="map">
+  select
+    field1, field2, field3
+  <include refid="someinclude">
+    <property name="prefix" value="Some"/>
+    <property name="include_target" value="sometable"/>
+  </include>
+</select>
+<!--最终语句为
+	SELECT field1, field2, field3 from SomeTable;
+-->
+```
+
+### 参数（Parameters）
+
+前面的所有语句中你所见到的都是简单参数的例子，实际上参数是 MyBatis 非常强大的元素，对于简单的做法，大概 90% 的情况参数都很少，比如:
+
+```xml
+<select id="selectUsers" resultType="User">
+  select id, username, password
+  from users
+  where id = #{id}
+</select>
+```
+
+上面的这个示例说明了一个非常简单的命名参数映射。参数类型被设置为 `int`，这样这个参数就可以被设置成任何内容。原生的类型或简单数据类型（比如整型和字符串）因为没有相关属性，它会完全用参数值来替代。然而，如果传入一个复杂的对象，行为就会有一点不同了。比如：
+
+```xml
+<insert id="insertUser" parameterType="User">
+  insert into users (id, username, password)
+  values (#{id}, #{username}, #{password})
+</insert>
+```
+
+如果 User 类型的参数对象传递到了语句中，id、username 和 password 属性将会被查找，然后将它们的值传入预处理语句的参数中。这点相对于向语句中传参是比较好的，而且又简单，不过参数映射的功能远不止于此。
+
+首先，像 MyBatis 的其他部分一样，参数也可以指定一个特殊的数据类型。
+
+```css
+#{property,javaType=int,jdbcType=NUMERIC} //指定数据类型
+#{age,javaType=int,jdbcType}
+```
+
+## 五、动态SQL
+
+六、JavaAPI
+
+七、SQL语句构建器
+
+八、日志
