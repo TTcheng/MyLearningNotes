@@ -589,9 +589,257 @@ SELECT元素的属性
 
 首先，像 MyBatis 的其他部分一样，参数也可以指定一个特殊的数据类型。
 
-```css
-#{property,javaType=int,jdbcType=NUMERIC} //指定数据类型
-#{age,javaType=int,jdbcType}
+```c
+//指定数据类型
+#{property,javaType=int,jdbcType=NUMERIC}
+//指定类处理器或别名
+#{age,javaType=int,jdbcType=NUMERIC,typeHandler=MyTypeHandler}
+//指定小数位数
+#{height,javaType=double,jdbcType=NUMERIC,numericScale=2}
+```
+
+[更多高级用法](http://www.mybatis.org/mybatis-3/zh/sqlmap-xml.html#Parameters)
+
+#### 字符串替换
+
+默认情况下,使用 `#{}` 格式的语法会导致 MyBatis 创建 `PreparedStatement` 参数并安全地设置参数（就像使用 ? 一样）。这样做更安全，更迅速，通常也是首选做法，不过有时你就是想直接在 SQL 语句中插入一个不转义的字符串。比如，像 ORDER BY，你可以这样来使用：
+
+```SQL
+ORDER BY ${columnName}
+```
+
+这里 MyBatis 不会修改或转义字符串。 
+
+**`NOTE`** 用这种方式接受用户的输入，并将其用于语句中的参数是不安全的，会导致潜在的 SQL 注入攻击，因此要么不允许用户输入这些字段，要么自行转义并检验。 
+
+### Result Maps
+
+`resultMap` 元素是 MyBatis 中最重要最强大的元素。它可以让你从 90% 的 JDBC `ResultSets` 数据提取代码中解放出来,并在一些情形下允许你做一些 JDBC 不支持的事情。实际上，在对复杂语句进行联合映射的时候，它很可能可以代替数千行的同等功能的代码。ResultMap 的设计思想是，简单的语句不需要明确的结果映射，而复杂一点的语句只需要描述它们的关系就行了。
+
+简单映射语句示例,但没有明确的 resultMap。比如:
+
+```xml
+<select id="selectUsers" resultType="map">
+  select id, username, hashedPassword
+  from some_table
+  where id = #{id}
+</select>
+```
+
+上述语句只是简单地将所有的列映射到 HashMap 的键上，这由 resultType 属性指定。虽然在大部分情况下都够用，但是 HashMap 不是一个很好的领域模型。你的程序更可能会使用 JavaBean 或 POJO(Plain Old Java Objects，普通 Java 对象)作为领域模型。MyBatis 对两者都支持。
+```xml
+<select id="selectUsers" resultType="com.someapp.model.User">
+select id, username, hashedPassword
+from some_table
+where id = #{id}
+</select>
+```
+
+其中的User是一个JavaBea。select 语句中的列名会对应到下面这些属性上 。
+
+```java
+package com.someapp.model;
+public class User {
+  private int id;
+  private String username;
+  private String hashedPassword;
+  
+  public int getId() {
+    return id;
+  }
+  public void setId(int id) {
+    this.id = id;
+  }
+  public String getUsername() {
+    return username;
+  }
+  public void setUsername(String username) {
+    this.username = username;
+  }
+  public String getHashedPassword() {
+    return hashedPassword;
+  }
+  public void setHashedPassword(String hashedPassword) {
+    this.hashedPassword = hashedPassword;
+  }
+}
+```
+
+MyBatis 会在幕后自动创建一个 `ResultMap`，再基于属性名来映射列到 JavaBean 的属性上。如果列名和属性名没有精确匹配，可以在 SELECT 语句中对列使用别名（这是一个 基本的 SQL 特性）来匹配标签。比如：
+
+```xml
+<select id="selectUsers" resultType="User">
+  select
+    user_id             as "id",
+    user_name           as "userName",
+    hashed_password     as "hashedPassword"
+  from some_table
+  where id = #{id}
+</select>
+```
+
+`ResultMap` 最优秀的地方在于，虽然你已经对它相当了解了，但是根本就不需要显式地用到他们。 上面这些简单的示例根本不需要下面这些繁琐的配置。 出于示范的原因，让我们来看看最后一个示例中，如果使用外部的 `resultMap` 会怎样，这也是解决列名不匹配的另外一种方式。
+
+```xml
+<resultMap id="userResultMap" type="User">
+  <id property="id" column="user_id" />
+  <result property="username" column="user_name"/>
+  <result property="password" column="hashed_password"/>
+</resultMap>
+```
+
+ 引用它的语句使用 resultMap 属性就行了（**注意**我们去掉了 resultType 属性）。比如: 
+
+```xml
+<select id="selectUsers" resultMap="userResultMap">
+  select user_id, user_name, hashed_password
+  from some_table
+  where id = #{id}
+</select>
+```
+
+ 如果世界总是这么简单就好了。 
+
+[更多高级用法](http://www.mybatis.org/mybatis-3/zh/sqlmap-xml.html#Result_Maps)
+
+### 自动映射
+
+正如你在前面一节看到的，在简单的场景下，MyBatis可以替你自动映射查询结果。如果遇到复杂的场景，你需要构建一个result map。但是在本节你将看到，你也可以混合使用这两种策略。让我们到深一点的层面上看看自动映射是怎样工作的。
+
+当自动映射查询结果时，MyBatis会获取sql返回的列名并在java类中查找相同名字的属性（忽略大小写）。这意味着如果Mybatis发现了*ID*列和*id*属性，Mybatis会将*ID*的值赋给*id*。
+
+通常数据库列使用大写单词命名，单词间用下划线分隔；而java属性一般遵循驼峰命名法。为了在这两种命名方式之间启用自动映射，需要将 **`mapUnderscoreToCamelCase`**设置为true。 
+
+自动映射甚至在特定的result map下也能工作。在这种情况下，对于每一个result map,所有的ResultSet提供的列，如果没有被手工映射，则将被自动映射。自动映射处理完毕后手工映射才会被处理。在接下来的例子中， *id* 和 *userName*列将被自动映射， *hashed_password* 列将根据配置映射。
+
+```xml
+<select id="selectUsers" resultMap="userResultMap">
+  select
+    user_id             as "id",
+    user_name           as "userName",
+    hashed_password
+  from some_table
+  where id = #{id}
+</select>
+```
+
+```xml
+<resultMap id="userResultMap" type="User">
+  <result property="password" column="hashed_password"/>
+</resultMap>
+```
+
+有三种自动映射等级：         
+
+- `NONE` - 禁用自动映射。仅设置手动映射属性。           
+- `PARTIAL` - 将自动映射结果除了那些有内部定义内嵌结果映射的(joins).           
+- `FULL` - 自动映射所有。           
+
+默认值是`PARTIAL`，这是有原因的。当使用`FULL`时，自动映射会在处理join结果时执行，并且join取得若干相同行的不同实体数据，因此这可能导致非预期的映射。
+
+### 缓存
+
+MyBatis 包含一个非常强大的查询缓存特性,它可以非常方便地配置和定制。MyBatis 3 中的缓存实现的很多改进都已经实现了,使得它更加强大而且易于配置。 默认情况下是没有开启缓存的,除了局部的 session 缓存,可以增强变现而且处理循环 依赖也是必须的。要**开启二级缓存**,你需要在你的 SQL 映射文件中添加一行:         
+
+```xml
+<cache/>
+```
+
+ 字面上看就是这样。这个简单语句的效果如下:  
+
+- 映射语句文件中的所有 select 语句将会被缓存。
+- 映射语句文件中的所有 insert,update 和 delete 语句会刷新缓存。
+- 缓存会使用 Least Recently Used(LRU,最近最少使用的)算法来收回。
+- 根据时间表(比如 no Flush Interval,没有刷新间隔), 缓存不会以任何时间顺序 来刷新。
+- 缓存会存储列表集合或对象(无论查询方法返回什么)的 1024 个引用。
+-  缓存会被视为是 read/write(可读/可写)的缓存,意味着对象检索不是共享的,而 且可以安全地被调用者修改,而不干扰其他调用者或线程所做的潜在修改。           
+
+​           **NOTE** The cache will only apply to statements declared in the mapping file where the cache tag is located. If you are using the Java API in conjunction with the XML mapping files, then statements declared in the companion interface will not be cached by default. You will need to refer to the  cache region using the @CacheNamespaceRef annotation.
+
+ 所有的这些属性都可以通过缓存元素的属性来修改。比如:  
+
+```xml
+<cache
+  eviction="FIFO"
+  flushInterval="60000"
+  size="512"
+  readOnly="true"/>
+```
+
+ 这个更高级的配置创建了一个 FIFO 缓存,并每隔 60 秒刷新,存数结果对象或列表的 512 个引用,而且返回的对象被认为是只读的,因此在不同线程中的调用者之间修改它们会 导致冲突。
+
+ 可用的收回策略有: 
+
+- `LRU` – 最近最少使用的:移除最长时间不被使用的对象。            
+- `FIFO` – 先进先出:按对象进入缓存的顺序来移除它们。           
+- `SOFT` – 软引用:移除基于垃圾回收器状态和软引用规则的对象。           
+- `WEAK` – 弱引用:更积极地移除基于垃圾收集器状态和弱引用规则的对象。
+
+默认的是 LRU。
+
+ `flushInterval`(刷新间隔)可以被设置为任意的正整数,而且它们代表一个合理的毫秒 形式的时间段。默认情况是不设置,也就是没有刷新间隔,缓存仅仅调用语句时刷新。
+
+` size`(引用数目)可以被设置为任意正整数,要记住你缓存的对象数目和你运行环境的 可用内存资源数目。默认值是 1024。
+
+ `readOnly`(只读)属性可以被设置为 true 或 false。只读的缓存会给所有调用者返回缓 存对象的相同实例。因此这些对象不能被修改。这提供了很重要的性能优势。可读写的缓存 会返回缓存对象的拷贝(通过序列化) 。这会慢一些,但是安全,因此默认是 false。
+
+#### 使用自定义缓存
+
+ 除了这些自定义缓存的方式, 你也可以通过实现你自己的缓存或为其他第三方缓存方案 创建适配器来完全覆盖缓存行为。         
+
+```xml
+<cache type="com.domain.something.MyCustomCache"/>
+```
+
+ 这个示 例展 示了 如何 使用 一个 自定义 的缓 存实 现。type 属 性指 定的 类必 须实现 org.mybatis.cache.Cache 接口。这个接口是 MyBatis 框架中很多复杂的接口之一,但是简单 给定它做什么就行。         
+
+```java
+public interface Cache {
+  String getId();
+  int getSize();
+  void putObject(Object key, Object value);
+  Object getObject(Object key);
+  boolean hasKey(Object key);
+  Object removeObject(Object key);
+  void clear();
+}
+```
+
+ 要配置你的缓存, 简单和公有的 JavaBeans 属性来配置你的缓存实现, 而且是通过 cache 元素来传递属性, 比如, 下面代码会在你的缓存实现中调用一个称为 “setCacheFile(String file)” 的方法:         
+
+```xml
+<cache type="com.domain.something.MyCustomCache">
+  <property name="cacheFile" value="/tmp/my-custom-cache.tmp"/>
+</cache>
+```
+
+​           你可以使用所有简单类型作为 JavaBeans 的属性,MyBatis 会进行转换。           And you can specify a placeholder(e.g. `${cache.file}`) to replace value defined at [configuration properties](http://www.mybatis.org/mybatis-3/zh/configuration.html#properties).         
+
+ 从3.4.2版本开始，MyBatis已经支持在所有属性设置完毕以后可以调用一个初始化方法。如果你想要使用这个特性，请在你的自定义缓存类里实现  `org.apache.ibatis.builder.InitializingObject` 接口。         
+
+```java
+public interface InitializingObject {
+  void initialize() throws Exception;
+}
+```
+
+ 记得缓存配置和缓存实例是绑定在 SQL 映射文件的命名空间是很重要的。因此,所有 在相同命名空间的语句正如绑定的缓存一样。 语句可以修改和缓存交互的方式, 或在语句的 语句的基础上使用两种简单的属性来完全排除它们。默认情况下,语句可以这样来配置:         
+
+```xml
+<select ... flushCache="false" useCache="true"/>
+<insert ... flushCache="true"/>
+<update ... flushCache="true"/>
+<delete ... flushCache="true"/>
+```
+
+ 因为那些是默认的,你明显不能明确地以这种方式来配置一条语句。相反,如果你想改 变默认的行为,只能设置 flushCache 和 useCache 属性。比如,在一些情况下你也许想排除 从缓存中查询特定语句结果,或者你也许想要一个查询语句来刷新缓存。相似地,你也许有 一些更新语句依靠执行而不需要刷新缓存。
+
+#### 参照缓存
+
+ 回想一下上一节内容, 这个特殊命名空间的唯一缓存会被使用或者刷新相同命名空间内 的语句。也许将来的某个时候,你会想在命名空间中共享相同的缓存配置和实例。在这样的 情况下你可以使用 cache-ref 元素来引用另外一个缓存。         
+
+```xml
+<cache-ref namespace="com.someone.application.data.SomeMapper"/>
 ```
 
 ## 五、动态SQL
