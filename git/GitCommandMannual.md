@@ -38,7 +38,7 @@ cd testgit
 git init
 ```
 
-6、从远程仓库拷贝现有代码：git clone  xxxxx(地址)
+6、从远程仓库拷贝现有代码：任意目录运行 git clone  xxxxx(地址)
 
 ```shell
 git clone  xxxxx(address)
@@ -75,7 +75,7 @@ git push origin localbranch:remotebranch
 
 回到上一个版本：git reset --hard HEAD^
 
-回到前三个版本：git rese
+回到前三个版本：git reset HEAD~3
 
 回到指定版本：git reset "版本号"
 
@@ -85,7 +85,7 @@ git push origin localbranch:remotebranch
 
 15、查看当前所有分支：git branch
 
-16、查看远程分支：git branch -r
+16、查看远程分支：git branch -r  / git remote
 
 17、删除分支：git branch -d "分支名"
 

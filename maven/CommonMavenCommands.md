@@ -31,6 +31,8 @@ mvn archetype:create
 mvn archetype:generate
 ```
 
+
+
 ## 二、快速创建maven项目
 
 你是怎么创建你的maven项目的?是不是像这样:
@@ -77,7 +79,7 @@ mvn site
 
 **8. 打包：**
 
-```
+```shell
 mvn package
 ```
 
@@ -390,3 +392,4 @@ mvn dependency:sources
 ```
 
 故名思义,有了它,你就不用到处找源码了,运行一下,你项目里所依赖的jar包的源码就都有了
+
