@@ -1,0 +1,9 @@
+谷歌的 Noto 字体家族旨在支持所有语言。
+noto-fonts
+noto-fonts-cjk      支持中日韩
+noto-fonts-emoji    支持emoji表情
+
+安装
+    pacman -S noto-fonts noto-fonts-cjk noto-fonts-emoji
+
+其他字体问题参考：archwiki Localization/Simplified Chinese
