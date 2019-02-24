@@ -1,0 +1,21 @@
+## 查看硬盘分区信息
+fdisk -l 
+## 查看挂载情况
+lsblk 
+## 查看磁盘UUID
+blkid /dev/sda1
+## 开机挂载配置文件
+fstab
+
+## 案例
+```shell
+# <file system> <dir> <type> <options> <dump> <pass>
+# /dev/sda5
+UUID=99f45f41-c8b4-4077-9802-e6b52d45c38d	/         			ext4      	rw,relatime	0 1
+UUID=E84C4EAD4C4E75FA	/run/media/jesse/Windows	ntfs	default 	0 1
+UUID=F8D2BAB1D2BA740A	/run/media/jesse/Software	ntfs	default		0 1
+UUID=545CCACE5CCAAA56	/run/media/jesse/Workspace
+ntfs	default		0 1
+UUID=9CA6DA0CA6D9E734	/run/media/jesse/Media	ntfs	default		0 1
+
+```
