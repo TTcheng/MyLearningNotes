@@ -249,6 +249,38 @@ y // 2
 z // { a: 3, b: 4 }
 ```
 
+## Promise 对象
+
+
+Promise 是 ES6 引入的封装异步操作的统一接口。它返回一个对象，包含了异步操作的信息。
+
+
+
+Promise 本身是一个**构造函数**，提供了resolve和reject两个方法。一旦异步操作成功结束，就调用resolve方法，将 Promise 实例对象的状态改为resolved，一旦异步操作失败，就调用reject方法，将 Promise 实例的状态改成rejected。
+
+
+```js
+function timeout(duration = 0) {
+  return new Promise((resolve, reject) => {
+    setTimeout(resolve, duration);
+  })
+}
+```
+
+上面代码中，timeout函数返回一个 Promise 实例，在指定时间以后，将状态改为resolved。
+
+```js
+var p = timeout(1000).then(() => {
+  return timeout(2000);
+}).then(() => {
+  throw new Error("hmm");
+}).catch(err => {
+  return Promise.all([timeout(100), timeout(200)]);
+})
+```
+
+一旦 Promise 实例的状态改变以后，就可以使用then()方法指定下面将要执行的函数，catch()方法用来处理rejected状态的情况。
+
 ## Babel — ES转码器
 
 1、安装Babel
