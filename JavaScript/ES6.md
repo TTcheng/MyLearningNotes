@@ -134,7 +134,7 @@ Object.defineProperty(targetObj,{
     enumerable:false,//是否能被遍历
     get(){...},
   	set(){...}
-    
+
 })
 ```
 
@@ -148,6 +148,12 @@ class Person{
         this.name = name;
         this.age = age;
     }
+    get name(){
+      return this.name;
+    }
+    set name(name){
+      this.name = name;
+    }
     showName(){
         console.log(this.name);
     }
@@ -160,6 +166,18 @@ console.log(jesse.name);
 jesse.showName();
 Person.sayHello();
 ```
+
+- constructor()：构造函数，新建实例的时候，自动调用这个方法。
+
+- extends：第一行的extends关键字表示继承某个父类。
+
+- super：子类方法里面的super指代父类。
+
+- get()：get是取值器，读取该方法定义的属性时，会自动执行指定的代码。
+
+- set()：set是赋值器，赋值该方法定义的属性时，会自动执行指定的代码。
+
+- static：方法前面加上static关键字，表示该方法是静态方法，定义在类上面，而不是定义在实例对象上面，以上面为例，就是SkinnedMesh.defaultMatrix()这样调用。
 
 ## 解构赋值
 
@@ -187,6 +205,48 @@ let res = a_plus_b(obj);//res = 3
 
 ```js
 let [a,b]="张三"; // a = "张",b="三"
+```
+
+## rest 参数
+
+ES6 引入 rest 参数（形式为...变量名），用于获取函数的多余参数，这样就不需要使用arguments对象了。rest 参数搭配的变量是一个数组，该变量将多余的参数放入数组中。
+
+```js
+function add(...values) {
+  let sum = 0;
+
+  for (var val of values) {
+    sum += val;
+  }
+
+  return sum;
+}
+
+add(2, 5, 3) // 10
+```
+
+## 扩展运算符
+
+扩展运算符（spread）是三个点（...）。它好比 rest 参数的逆运算，将一个数组转为用逗号分隔的参数序列。
+
+```js
+console.log(...[1, 2, 3])
+// 1 2 3
+
+console.log(1, ...[2, 3, 4], 5)
+// 1 2 3 4 5
+
+[...document.querySelectorAll('div')]
+// [<div>, <div>, <div>]
+
+```
+对象也可以使用扩展运算符。
+
+```js
+let { x, y, ...z } = { x: 1, y: 2, a: 3, b: 4 };
+x // 1
+y // 2
+z // { a: 3, b: 4 }
 ```
 
 ## Babel — ES转码器
@@ -224,13 +284,13 @@ export 1;		//错误
 export name;	//错误
 ```
 
-import 
+import
 
 ```js
 //test.js
 import {firstName} from './common'
 console.log(firstName);//output Jesse
+// use *
+import * as common from './common'
+console.log(common.firstName);
 ```
-
-
-
