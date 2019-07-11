@@ -40,6 +40,7 @@ fcitx-googlepinyin
 fcitx-sogoupinyin
 
 # 社交娱乐
+deepin-wine-wechat
 electronic-wechat
 deepin.com.qq.office
 netease-cloud-music
@@ -51,9 +52,15 @@ wget
 zssh
 chromium
 firefox
+firefox-i18n-zh-cn
 google-chrome
 opera 
-teamviewer # systemctl enable teamviewerd
+zoom
+teamviewer      # systemctl enable teamviewerd
+rdesktop        # rdesktop -u Administrator 192.168.12.158 -g 1440x900
+deepin-baidu-pan
+deepin.com.thunderspeed 
+shadowsocks-qt5
 
 # 开发工具
 jdk-openjdk
@@ -64,6 +71,9 @@ rapidsvn
 redis
 docker
 docker-compose
+dotnet-sdk      # .net sdk
+mono            # .net c#
+monodevelop     # .net/c#/f# ide
 
 # themes
 adwaita-icon-theme
@@ -85,6 +95,10 @@ typora
 wine
 wps-office
 youdao-dict
-zoom
 fluxgui         # 护眼
 etcher-bin      # 启动盘制作
+cheese          # 相机
+gnome-weather   # 天气
+cpupower        
+cpupower-gui    # cpu调节 
+cups            # 打印机管理
