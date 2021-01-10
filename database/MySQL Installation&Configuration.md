@@ -86,3 +86,11 @@ sudo apt-get autoremove --purge mysql-server
 # yum
 sudo yum remove mysql-server
 ```
+
+## 备份及恢复（迁移）
+
+```shell
+mysqldump -u root -p hdp > hdp.sql
+mysql -u root -p --default-character-set=utf8 hdp < hdp.sql
+```
+
