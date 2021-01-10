@@ -120,6 +120,12 @@ harry = harryssecret
 sally = sallyssecret
 ```
 
+## 启动svn服务
+
+```shell
+svnserve -d -r /data/svn/
+```
+
 ## 常用客户端命令
 
 svn checkout svn://192.168.xxx.xxx/repo_name
