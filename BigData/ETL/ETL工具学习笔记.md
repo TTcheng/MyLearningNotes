@@ -29,3 +29,21 @@
 ## 常用ETL工具对比
 
 ![image-20210306233359029](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20210306233359029.png)
+
+# 数据同步
+
+### 增量策略
+
+- 时间戳
+
+  针对每一条数据的新增、更新、删除(逻辑删除)等操作更新时间戳(如last_update_date)的的应用，适用此方法。通过主键或唯一索引覆盖更新。例如：
+
+  ```mysql
+  SELECT * 
+  FROM test_table
+  WHERE last_update_date > ${LAST_DAY}
+  ```
+
+- 自增ID
+
+  对于新增流水型数据，可以WHERE条件后跟上一阶段最大自增ID即可。

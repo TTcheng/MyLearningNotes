@@ -1,4 +1,3 @@
-
 ## kendoUI validator 表单验证
 
 ### 实现方式一
@@ -22,7 +21,9 @@
     </form>
 </div>
 ```
+
 - 使用
+
 ```javascript
 var validator = $("#page-content").kendoValidator().data("kendoValidator");
 if (validator.validate()){
@@ -37,6 +38,7 @@ if (validator.validate()){
 **验证规则和提示写在JavaScript代码中**
 
 - html
+
 ```html
 <div id="page-content">
     <form id="mainform" class="form-horizontal" method="post"
@@ -49,7 +51,9 @@ if (validator.validate()){
     </form>
 </div>
 ```
+
 - 验证器和验证规则
+
 ```javascript
 var validator = $("#page-content").kendoValidator({
     rules: {
@@ -89,3 +93,85 @@ if (validator.validate()){
     //invalid. notify user
 }
 ```
+
+## kendoUI模板引擎：
+
+[原文](https://www.jianshu.com/p/742df82da47d)
+
+kendoUI中的模板引擎使用的语法叫做`#号语法`，或者`hash syntax（哈希语法）`。
+
+它的主要作用是:
+
+- `渲染数据`和`执行js表达式`
+
+### 1. 渲染数据到html模板
+
+- 第一种：使用`=号`渲染`原始值`
+   `#= myVar #`
+- 第二种：使用`:号`渲染`html编码值`
+   `#: myVar #`
+- 两者的区别：
+   当数据值中`包含HTML标签`时，`冒号`方式会对值里的HTML标签进行`转义`，从而可以把标签作为字符串直接输出。
+
+区别示例：
+
+```css
+//uses #= #
+var myTemplateRaw = kendo.template("<p>#= name #</p>");
+var newHTMLRaw = myTemplateRaw({name:"<strong>zmh</strong>"});
+console.log(newHTMLRaw); //<p><strong>zmh</strong></p>
+$("#container").append(newHTMLRaw);
+
+//uses #: #
+var myTempalteHTMLEncoded = kendo.template("<p>#: name #</p>");
+var newHTMLEncoded = myTempalteHTMLEncoded({name:"<strong>zhouminghang</strong>"});
+console.log(newHTMLEncoded); //<p>&lt;strong&gt;zhouminghang&lt;/strong&gt;</p>
+$("#container").append(newHTMLEncoded);
+```
+
+页面结果：
+
+```css
+zmh
+<strong>zhouminghang</strong>
+```
+
+> *很明显，=号过滤掉了html标签，但：号会将html标签作为字符串输出。*
+
+### 2. 执行js表达式 # expression
+
+- 示例1：
+
+```css
+<script type="text/x-kendo-template">
+    <ul>
+    # for (var i = 0; i < data.length; i++){ #
+           <li>#= data[i] #</li>
+    # } #
+    </ul>
+</script>
+```
+
+- 示例2：
+
+```css
+var template = "#if(foo) {# #= foo # is true #}#";
+```
+
+- 示例3：
+
+```css
+<script type="text/x-kendo-template">
+    #if(isAdmin){#
+        <li>#: name # is Admin</li>
+    #}else{#
+         <li>#: name # is not Admin</li>
+    #}#
+</script>
+```
+
+无论是在行内模板中，还是在外部模板中，都可以使用JS变量和表达式。
+
+- 注意：
+   js表达式中都要`以#开头`，`以#结束`，注意`单双引号`的`嵌套`，一般为`外双内单`。
+   如果表达式中存在 `#号特殊字符`，比如style中颜色用#号值，注意使用`双斜杠\\`，进行`转义`，不是单斜杠，否则会报无效的模板错误。
