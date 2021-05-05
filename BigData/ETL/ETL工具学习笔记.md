@@ -28,7 +28,7 @@
 
 ## 常用ETL工具对比
 
-![image-20210306233359029](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20210306233359029.png)
+![image-20210413202814312](ETL工具学习笔记.assets/image-20210413202814312.png)
 
 # 数据同步策略
 

@@ -180,7 +180,11 @@ MysqlWriter/MysqlReader插件通过JDBC连接访问数据库，Reader执行SELEC
       "job": {
           "setting": {
               "speed": {
-                   "channel":1
+                   "channel": 3
+              },
+              "errorLimit": {
+                  "record": 0,
+                  "percentage": 0.02
               }
           },
           "content": [
@@ -189,47 +193,60 @@ MysqlWriter/MysqlReader插件通过JDBC连接访问数据库，Reader执行SELEC
                       "name": "mysqlreader",
                       "parameter": {
                           "username": "root",
-                          "password": "root",
+                          "password": "Admin@123",
+                          "column": [
+                              "id",
+                              "batch",
+                              "template_code",
+                              "data_status",
+                              "sheet_index",
+                              "error_msg",
+                              "data",
+                              "back_info",
+                          ],
+                          "splitPk": "id",
                           "connection": [
                               {
-                                  "querySql": [
-                                      "SELECT hi.batch, hi.template_code, hi.status AS batch_status, hi.data_count AS batch_count, hi.creation_date AS import_time , hd.sheet_index, hd.data_status, hd.data, hd.error_msg FROM himp_import hi JOIN himp_data hd ON hd.batch = hi.batch WHERE hi.creation_date > DATE_ADD(CURDATE(), INTERVAL -1 DAY);"
+                                  "table": [
+                                      "himp_data"
                                   ],
                                   "jdbcUrl": [
-                                      "jdbc:mysql://bad_ip:3306/database"
+       "jdbc:mysql://hw:23306/hdp?useUnicode=true&characterEncoding=utf8"
                                   ]
                               }
                           ]
                       }
                   },
-                  "writer": {
+                 "writer": {
                       "name": "mysqlwriter",
                       "parameter": {
-                          "writeMode": "update",
+                          "writeMode": "insert",
                           "username": "root",
-                          "password": "root",
+                          "password": "Admin123",
                           "column": [
+                              "id",
                               "batch",
-                              "templateCode",
-                              "batch_status",
-                              "batch_count",
-                              "import_time",
-                              "sheet_index",
+                              "template_code",
                               "data_status",
-                              "data",
+                              "sheet_index",
                               "error_msg",
+                              "data",
+                              "back_info",
                           ],
                           "session": [
                           	"set session sql_mode='ANSI'"
                           ],
                           "preSql": [
-                              "DELETE FROM himp_import_all WHERE import_time > DATE_ADD(CURDATE(), INTERVAL -1 DAY)"
+                              "truncate table himp_data_tmp"
+                          ],
+                          "postSql": [
+                              "INSERT INTO himp_data(id, batch, template_code, data_status, sheet_index, error_msg, data, back_info) SELECT * FROM himp_data_tmp"
                           ],
                           "connection": [
                               {
-                                  "jdbcUrl": "jdbc:mysql://127.0.0.1:3306/datax?useUnicode=true&characterEncoding=utf8",
+                                  "jdbcUrl": "jdbc:mysql://localhost:3306/hdp?useUnicode=true&characterEncoding=utf8",
                                   "table": [
-                                      "himp_import_all"
+                                      "himp_data_tmp"
                                   ]
                               }
                           ]
@@ -239,6 +256,7 @@ MysqlWriter/MysqlReader插件通过JDBC连接访问数据库，Reader执行SELEC
           ]
       }
   }
+  
   ```
 
 ##### FAQ
