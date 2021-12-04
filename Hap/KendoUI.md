@@ -371,6 +371,381 @@ var validator = $("#query-form").kendoValidator({
     }).data("kendoValidator");
 ```
 
+### 全选
+
+通过向数据源添加一个数据项【全选】，点击这个数据项时，选择全部。
+
+#### 展示效果
+
+![image-20210902174603824](KendoUI.assets/image-20210902174603824.png)
+
+#### 核心代码
+
+```js
+$("#status-picker").kendoMultiSelect({
+    autoBind: true,
+    dataSource: [
+        {value: "DRAFT", meaning: "草稿"},
+        {value: "PEDNING", meaning: "待审批"},
+        {value: "REJECTED", meaning: "已拒绝"},
+        {value: "PUBLISHED", meaning: "已发布"}
+    ],
+    valuePrimitive: true,
+    dataTextField: "meaning",
+    dataValueField: "value",
+    dataBound: function() {
+        // 添加一个全选的数据项
+        let first = this.dataSource.at(0);
+        const valueField = this.options.dataValueField;
+        const textField = this.options.dataTextField;
+        const allItem = {};
+        allItem[valueField] = '_all';
+        allItem[textField] = '全选';
+        console.log(first)
+        if (!first || first[valueField] !== '_all') {
+            this.dataSource.insert(0, allItem);
+        }
+    },
+    select: function(e) {
+        const valueField = this.options.dataValueField;
+        const items = this.items();
+        // 全选
+        if (e.dataItem[valueField] === '_all') {
+            // console.log('select all');
+            e.preventDefault();
+            selectAll(items)
+            return;
+        }
+        // 普通点选之后满足全选条件
+        if (this.dataItems().length + 1 === items.length - 1) {
+            $(items[0]).addClass('k-state-selected');
+        }
+    },
+    deselect: function (e) {
+        const valueField = this.options.dataValueField;
+        const items = this.items();
+        // 取消全选
+        if (e.dataItem[valueField] === '_all') {
+            // console.log('deselect all');
+            e.preventDefault();
+            const items = this.items();
+            deSelectAll(items);
+            return;
+        }
+        // 普通点选之后不满足全选条件
+        if (this.dataItems().length === items.length - 1) {
+            $(items[0]).removeClass('k-state-selected');
+        }
+    }
+});
+
+function selectAll(items) {
+    for (const item of items) {
+        if (!$(item).hasClass('k-state-selected')) {
+            item.click();
+        }
+    }
+}
+
+function deSelectAll(items) {
+    for (const item of items) {
+        if ($(item).hasClass('k-state-selected')) {
+            item.click();
+        }
+    }
+}
+```
+
+### 新增选项
+
+#### 实现效果
+
+如图所示，当输入不存在的选项时，可以提示新增输入的选项
+
+![image-20211124221633270](KendoUI.assets/image-20211124221633270.png)
+
+#### 核心代码
+
+参考后节【表格中编辑】的完整代码，核心为noDataTemplate模板，addNew方法，labelSource的requestEnd事件
+
+### 表格中编辑
+
+#### 注意点：
+
+- 数据绑定，绑定的数据必须是数组，如果不是，需要分别在得到查询和保存请求之前做两个相反的转换。
+
+    参考dataSource.schema.parse和dataSource.transport.parameterMap以及MultiSelect的定义
+
+- 避免过滤保留，过滤保留会导致编辑其他行时，已选择项无法正确展示
+
+    参考MultiSelect.options.close
+
+- 新增选项如何添加到已选择，参考labelSource的requestEnd事件
+
+#### 完整代码
+
+```html
+<script>
+    var dataSource = new kendo.data.DataSource({
+        transport: {
+            read: {
+                url: BaseUrl + "/moa/material/archive/query",
+                type: "GET",
+                dataType: "json"
+            },
+            update: {
+                url: BaseUrl + "/moa/material/archive/submit",
+                type: "POST",
+                contentType: "application/json"
+            },
+            destroy: {
+                url: BaseUrl + "/moa/material/archive/remove",
+                type: "POST",
+                contentType: "application/json"
+            },
+            parameterMap: function (options, type) {
+                if (type !== "read" && options.models) {
+                    var datas = Hap.prepareSubmitParameter(options, type)
+                    datas = datas.map(item => ({...item, fileLabel: item.fileLabel.join(',')}));
+                    return kendo.stringify(datas);
+                } else if (type === "read") {
+                    var json = viewModel.model.toJSON();
+                    // 数组转字符串
+                    json.fileLabel = $.isEmpty(json.fileLabel) ? null : json.fileLabel.join(",");
+                    json.fileType = $.isEmpty(json.fileType) ? null : json.fileType.join(",");
+                    return Hap.prepareQueryParameter(json, options)
+                }
+            }
+        },
+        batch: true,
+        serverPaging: true,
+        pageSize: 10,
+        requestEnd: function (e) {
+            const {response, type} = e;
+            if (type !== "read" && response && response.success) {
+                viewModel.query();
+            }
+        },
+        schema: {
+            data: 'rows',
+            total: 'total',
+            model: {
+                id: "archiveId",
+                fields: {
+                    fileName: {
+                        type: 'string',
+                    },
+                    fileLabel: {
+                        type: 'object',
+                    },
+                    fileFormat: {
+                        type: 'string',
+                        editable: false,
+                    },
+                    fileType: {
+                        type: 'string',
+                        editable: false,
+                    },
+                }
+            },
+            parse: response => {
+                response.rows = (response.rows || []).map(item => ({
+                    ...item,
+                    fileLabel: item.fileLabel ? item.fileLabel.split(',') : [],
+                }));
+                return response;
+            }
+        }
+    });
+
+    var labelSource = new kendo.data.DataSource({
+        transport: {
+            read: {
+                url: BaseUrl + "/moa/material/archive/label/query",
+                type: "GET",
+                dataType: "json"
+            },
+            create: {
+                url: BaseUrl + "/moa/material/archive/label/create",
+                type: "POST",
+                contentType: "application/json"
+            },
+            parameterMap: function (options, type) {
+                if (type !== "read" && options.models) {
+                    var datas = Hap.prepareSubmitParameter(options, type)
+                    return kendo.stringify(datas);
+                } else if (type === "read") {
+                    const json = viewModel.model.toJSON();
+                    return Hap.prepareQueryParameter(json, options)
+                }
+            }
+        },
+        batch: true,
+        requestEnd: function (e) {
+            const {response, type} = e;
+            var widget = $("#fileLabel").data("kendoMultiSelect");
+            if (type === "create" && response.success === true) {
+                // 后台新增标签成功，添加到已选择项中
+                var newValue = response.rows[0].fileLabel;
+                widget.value(widget.value().concat([newValue]));
+            }
+        },
+        schema: {
+            data: 'rows',
+            total: 'total',
+            model: {
+                id: "labelId",
+                fields: {
+                    labelId: {
+                        type: 'number',
+                    },
+                    fileLabel: {
+                        type: 'string',
+                    },
+                }
+            },
+        },
+    });
+$("#grid").kendoGrid({
+    dataSource: dataSource,
+    resizable: true,
+    scrollable: true,
+    navigatable: false,
+    selectable: 'multiple, rowbox',
+    dataBound: function () {
+        const functionCode = '${RequestParameters.functionCode!}';
+        if (parent.autoResizeIframe) {
+            parent.autoResizeIframe(functionCode)
+        }
+        Hap.gridFloatingHorizontalScrollBar("#grid", functionCode)
+    },
+    pageable: {
+        pageSizes: [5, 10, 20, 50],
+        refresh: true,
+        buttonCount: 5
+    },
+    columns: [
+        // .... 省略其他无关列
+        {
+            field: "fileLabel",
+            title: '文件标签',
+            width: 200,
+            attributes: {
+                style: "text-align:center;",
+            },
+            template: dataItem => {
+                return dataItem.fileLabel.join(',');
+            },
+            editor: function (container, options) {
+                $('<input id="fileLabel" style="width: 100%;" name="' + options.field + '" />')
+                    .appendTo(container)
+                    .kendoMultiSelect({
+                        // headerTemplate: '<div><button onclick="addNew(\'fileLabel\')">添加新标签</button></div>',
+                        autoBind: true,
+                        close: function() {
+                            // 防止保留过滤标签项，导致编辑别的项时，已选择项无法正确展示
+                            if (this.dataSource.filter()) {
+                                this.dataSource.filter('')
+                            }
+                        },
+                        // filter: "eq",
+                        filter: "startswith",
+                        dataTextField: "fileLabel",
+                        dataValueField: "fileLabel",
+                        valuePrimitive: true,
+                        dataSource: labelSource,
+                        model: options.model,
+                        noDataTemplate: $("#noDataTemplate").html()
+                    })
+            }
+        },
+        {
+            width: 200,
+            title: '<@spring.message "hap.action"/>',
+            attributes: {
+                style: "text-align:center;",
+            },
+            command: [
+                {
+                    name: 'edit',
+                    template: '<a href="javascript:void(0)" class="k-grid-edit"><@spring.message "hap.edit"/></a>',
+                    click: function (e) {
+                        $(".k-button.k-grid-update").bind("click", showInvalidMsg);
+                    }
+                },
+                {
+                    name: 'remove',
+                    template: '<a style="margin-left: 10px" href="javascript:void(0)" class="k-grid-remove"><@spring.message "hap.delete"/></a>',
+                    click: function (e) {
+                        e.preventDefault();
+                        var source = $("#grid").data('kendoGrid').dataSource,
+                            data = this.dataItem($(e.target).closest("tr"));
+                        kendo.ui.showConfirmDialog({
+                            title: $l('hap.prompt'),
+                            message: $l('hap.tip.delete_confirm')
+                        }).done(function (event) {
+                            if (event.button === 'OK') {
+                                source.remove(data);
+                                source.sync()
+                            }
+                        })
+                    }
+                },
+                {
+                    name: 'download',
+                    template: '<a style="margin-left: 10px" href="javascript:void(0)" class="k-grid-download">下载</a>',
+                    click: function (e) {
+                        e.preventDefault();
+                        const data = this.dataItem($(e.target).closest("tr"));
+                        const minioFileName = data.minioFileName;
+                        const fileName = data.fileName + "." + data.fileFormat;
+                        location.href = "${base.contextPath}/moa/material/archive/download?minioFileName=" +
+                            minioFileName + "&fileName=" + fileName;
+                    }
+                },
+                /* {
+                     name: 'view',
+                     template: '<a style="margin-left: 10px" href="javascript:void(0)" class="k-grid-view">预览</a>',
+                     /!* click: function (e) {
+                          e.preventDefault();
+                          const data = this.dataItem($(e.target).closest("tr"));
+                          top.openTab('po_view_' + data.contractId, '基本信息与完成度', 'po/shop.html?contractId=' + data.contractId);
+                      }*!/
+                 },*/
+            ],
+        }
+    ],
+    editable: {
+        mode: 'inline'
+    },
+});
+    </script>
+<script id="noDataTemplate" type="text/x-kendo-tmpl">
+        # var value = instance.input.val(); #
+        # var id = instance.element[0].id; #
+        <div>
+           没有该标签。是否添加新标签 - '#: value #'？
+        </div>
+        <br />
+        <button class="k-button" onclick="addNew('#: instance.element[0].id #', '#: instance.input.val() #')"
+        ontouchend="addNew('#: instance.element[0].id #', '#: instance.input.val()#')">添加新标签</button>
+
+</script>
+
+<script>
+    function addNew(widgetId, value) {
+        var widget = $("#" + widgetId).getKendoMultiSelect();
+        var dataSource = widget.dataSource;
+        if (confirm("确定添加该标签吗?")) {
+            dataSource.add({
+                fileLabel: value
+            });
+            dataSource.sync();
+        }
+    }
+</script>
+```
+
 ## GRID - 数据表格
 
 ### 行内编辑
@@ -515,6 +890,63 @@ var treeList = $("#tree-list").kendoTreeList({
 // 解决页面不能自适应大小的问题
 treeList.bind("expand", autoResizeIframe);
 ```
+
+### 实现勾选事件
+
+Grid的API里面没有勾选事件，需要自己实现一个勾选事件。
+
+```js
+const grid = $("#grid").kendoGrid({
+    selectable: 'multiple, rowbox',
+    dataBound: function () {
+        if (parent.autoResizeIframe) {
+            parent.autoResizeIframe('${RequestParameters.functionCode!}')
+        }
+        // 默认已选择
+        if (selectedIndexes.length > 0) {
+            // 例如 grid.select("tr:eq(0), tr:eq(1)");
+            grid.select("tr:eq(" + selectedIndexes.join("), tr:eq(") + ")")
+        }
+        $("#grid table .k-checkbox").bind('click', bindOnCheckRow)
+    },
+    // 省略...
+});
+
+function bindOnCheckRow(e) {
+    const headRow = $(e.target).hasClass("k-headbox");
+    // 点击之前的选中状态
+    let justSelected;
+    if (headRow) {
+        justSelected = $(e.target).hasClass("fa-check");
+        justSelected ? onUnselectAll(e) : onSelectAll(e);
+    } else {
+        const thisRow = e.target.closest("tr");
+        const dataItem = grid.dataItem(thisRow);
+        justSelected = $(thisRow).hasClass("k-state-selected");
+        justSelected ? onUnselect(e, dataItem) : onSelect(e, dataItem);
+    }
+}
+
+let selectedItems = [];
+
+function onSelectAll() {
+    selectedItems = grid.dataItems();
+}
+
+function onUnselectAll() {
+    selectedItems = [];
+}
+
+function onSelect(e, dataItem) {
+    selectedItems.push(dataItem)
+}
+
+function onUnselect(e, dataItem) {
+    selectedItems = selectedItems.filter(item => item.materialId !== dataItem.materialId);
+}
+```
+
+
 
 ## TreeList - 树形表格、可展开表格
 
