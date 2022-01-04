@@ -73,7 +73,7 @@ $("#enabledFlag").kendoDropDownList({
     filter: "contains",
     // 是否区分大小写
     ignoreCase: false,
-    dataSource: [{value:'Y',meaning:'启用'},{value:'N',meaning:'禁用'}]
+    dataSource: [{value:'Y',meaning:'启用'},{value:'N',meaning:'禁用'}],
     dataTextField: "meaning",
     dataValueField: "value",
 });
