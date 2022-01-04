@@ -16,6 +16,8 @@ sudo yum instal   mysql80-community-release-el7-1.noarch.rpm
 # 3.查看是否安装成功
 sudo yum repolist all|grep mysql
 # 4.安装mysql
+sudo yum-config-manager --disable mysql80-community
+sudo yum-config-manager --enable mysql57-community
 sudo yum install mysql-community-server
 # 5.启动
 sudo service mysqld start

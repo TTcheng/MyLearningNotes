@@ -53,7 +53,7 @@ max_connections=1000
 
 my.cnf
 
-```
+```properties
 [mysqld]
 lower_case_table_names=1
 character_set_server=utf8
