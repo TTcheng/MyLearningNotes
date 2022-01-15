@@ -262,3 +262,14 @@ mysql> ALTER USER 'root'@'localhost' PASSWORD EXPIRE NEVER;
 mysql> FLUSH PRIVILEGES; 
 ```
 
+添加普通用户
+
+```shell
+# %代表所有IP，或者不用%指定IP
+CREATE USER 'username'@'ip/%' IDENTIFIED BY 'password';
+GRANT ALL PRIVILEGES ON dbname.tablename TO 'username'@'ip/%';
+DELETE FROM mysql.USER WHERE user='';	#解决登陆失败的问题 : Access denied for user 'wcc'@'localhost' 
+flush privileges;
+```
+
+### 
