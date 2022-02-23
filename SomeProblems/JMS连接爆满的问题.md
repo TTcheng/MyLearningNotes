@@ -32,6 +32,8 @@ PUSERSRV_SOA' - trying to recover. Cause: javax.naming.NameNotFoundException: Un
 10-Jan-2022 15:54:13.466 INFO [DistMdmBankSrv-3] org.springframework.jms.listener.DefaultMessageListenerContainer.refreshConnectionUntilSuccessful Successfully refreshed JMS Connection
 ```
 
-？？
+结论
 
 核心日志javax.naming.NameNotFoundException: Unable to resolve 'weblogic.jms.backend.JMSSERVER_SOA'. Resolved 'weblogic.jms.backend'; remaining name 'JMSSERVER_SOA'像是服务端的问题
+
+结合上面的核心日志，以及相关配置长期都没有改动且运行良好，而且配置和对方提供的指导文档一致，根据这几个情况来看，大概率是服务端的问题。
