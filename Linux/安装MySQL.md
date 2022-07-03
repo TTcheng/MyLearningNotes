@@ -11,8 +11,10 @@ sudo yum remove mysql-community-*
 rm -rf /var/lib/mysql
 rm /etc/my.cnf
 # 2.安装yum源
+# 这里el6、el7、el8各版本是不同的，取决于操作系统的版本，可以使用uname -a命令查看，如：Linux ecs-332869 4.18.0-240.10.1.el8_3.x86_64 #1 SMP Mon Jan 18 17:05:51 UTC 2021 x86_64 x86_64 x86_64 GNU/Linux
+# 这里以el7为例，全部的repo清单可以访问https://dev.mysql.com/downloads/repo/yum/
 wget https://dev.mysql.com/get/mysql80-community-release-el7-1.noarch.rpm
-sudo yum instal   mysql80-community-release-el7-1.noarch.rpm
+sudo yum install mysql80-community-release-el7-1.noarch.rpm
 # 3.查看是否安装成功
 sudo yum repolist all|grep mysql
 # 4.安装mysql

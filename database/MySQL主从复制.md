@@ -45,9 +45,11 @@ binlog_format = mixed
 #### 配置用户
 
 ```mysql
-CREATE USER 'req'@'%' IDENTIFIED BY 'password';
+CREATE USER 'req'@'0.0.0.%' IDENTIFIED BY 'password';
 -- 给rep用户赋复制权限
 grant replication slave on *.* to 'rep'@'10.0.0.%';
+# 修改密码
+# set password for 'root'@'localhost'=password('NEWPASSWORD');
 flush privileges;
 ```
 
@@ -61,7 +63,17 @@ mysqldump -uroot -p123456 -S /data/3306/mysql.sock -A -B -F --single-transaction
 # mysqldump --host=10.0.0.101 -uroot -proot -C --databases test |mysql --host=10.0.0.102 -uroot -proot test 
 ```
 
+导出的文件里面有保存点的位置（--master-data）
+
+![image-20220109214933385](MySQL主从复制.assets/image-20220109214933385.png)
+
 ### 从库配置
+
+#### 恢复数据到从库
+
+```shell
+mysql -uroot -p < rep_bak2022-01-09.sql
+```
 
 #### my.cnf
 
@@ -75,14 +87,12 @@ server_id=1
 
 #### 配置master信息
 
-（如果配置）
-
 ```mysql
 CHANGE MASTER TO 
 MASTER_HOST='10.0.0.101',  #这是主库的IP（域名也可以需要做解析）
 MASTER_PORT=3306,          #主库的端口
 MASTER_USER='rep',         #这是主库上创建用来复制的用户rep
-MASTER_PASSWORD='123456'   #rep的密码
+MASTER_PASSWORD='123456',   #rep的密码
 MASTER_LOG_FILE='mysql-bin.000025', #这里是show master status时看到的查询二进制日志文件名称，这里不能多空格
 MASTER_LOG_POS=9155;       #这里是show master status时看到的二进制日志偏移量，不能多空格
 ```
