@@ -274,4 +274,23 @@ DELETE FROM mysql.USER WHERE user='';	#解决登陆失败的问题 : Access deni
 flush privileges;
 ```
 
-### 
+## Arch/Manjaro
+
+Note：大部分和其他Linux操作步骤一样。多出安装依赖库，以及启动方式略有不同
+
+```shell
+# 安装依赖库(需要archlinuxcn源)
+sudo pacman -S libaio numactl libxcrypt-compat ncurses5-compat-libs
+# 初始化
+# ./mysqld --defaults-file=/etc/my.cnf --basedir=/opt/mysql/  --datadir=/data/mysql/ --user=mysql --initialize
+
+# 修改mysql.server启动脚本
+sudo -u mysql vim /opt/mysql/support-files/mysql.server
+# 修改内容如下
+# basedir=/opt/mysql
+# datadir=/data/mysql
+
+# 启动
+sudo -u mysql /opt/mysql/support-files/mysql.server start
+```
+
