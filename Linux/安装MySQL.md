@@ -246,7 +246,10 @@ vim /etc/my.cnf
 ```shell
 cd /usr/local/mysql/bin/
 # 安装可能用到的依赖
+# rhel
 yum -y install perl perl-devel autoconf libaio
+# debian
+sudo apt install libncurses5
 # 初始化
 ./mysqld --defaults-file=/etc/my.cnf --basedir=/usr/local/mysql/  --datadir=/data/mysql/ --user=mysql --initialize
 # 查看密码，搜索temporary password ,记录备用
