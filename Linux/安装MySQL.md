@@ -289,7 +289,7 @@ sudo pacman -S libaio numactl libxcrypt-compat ncurses5-compat-libs
 
 # 修改mysql.server启动脚本
 sudo -u mysql vim /opt/mysql/support-files/mysql.server
-# 修改内容如下
+# 如果默认配置文件不是MySQL支持的/etc/my.cnf或者，默认安装目录不是/usr/local，则需要修改其内容如下
 # basedir=/opt/mysql
 # datadir=/data/mysql
 
@@ -297,3 +297,123 @@ sudo -u mysql vim /opt/mysql/support-files/mysql.server
 sudo -u mysql /opt/mysql/support-files/mysql.server start
 ```
 
+
+# 安装MySQL8
+
+## Linux通用
+
+**如缺少相关依赖库，可参考前面各系统安装5.7的依赖安装步骤**
+
+```shell
+# 下载
+wget https://dev.mysql.com/get/Downloads/MySQL-8.0/mysql-8.0.31-linux-glibc2.17-x86_64-minimal.tar.xz
+# 添加用户组和用户
+groupadd mysql
+useradd -r -g mysql -s /bin/false mysql
+# 解压
+tar xvf /path/to/mysql-VERSION-OS.tar.xz
+sudo mv /path/to/mysql-VERSION-OS /opt/mysql8
+# 可选，创建命令链接
+ln -s /opt/mysql8/bin/mysql mysql8
+
+# 创建数据目录，并修改用户
+mkdir -p /data/mysql8
+chown mysql:mysql -R /data/mysql8
+# 编辑配置，完整配置参考下一个代码块
+# ！！注意：如果不是默认的my.cnf，则几乎所有mysql的命令都需要带上参数--defaults-file=/path/to/my.cnf
+vim /etc/my8.cnf
+# 初始化
+/opt/mysql8/bin/mysqld --defaults-file=/etc/my8.cnf --basedir=/opt/mysql8/  --datadir=/data/mysql8/ --user=mysql --initialize
+# 查看临时root密码
+cat /data/mysql/mysql.err |grep temporary password
+
+# 安装服务，可以支持使用service命令启动
+ln -s /opt/mysql8/support-files/mysql.server /etc/init.d/mysql.server
+# 如果默认配置文件不是MySQL支持的/etc/my.cnf或者，默认安装目录不是/usr/local，则需要修改其内容如下
+sed -i 's basedir= basedir=/opt/mysql8' /opt/mysql8/support-files/mysql.server
+sed -i 's datadir= datadir=/data/mysql8' /opt/mysql8/support-files/mysql.server
+sed -i 's conf=/etc/my.cnf conf=/etc/my8.cnf g' /opt/mysql8/support-files/mysql.server
+sed -i 's extra_args="" extra_args="--defaults-file=/etc/my8.cnf" g' /opt/mysql8/support-files/mysql.server
+sed -i 's lockdir='/var/lock/subsys' lockdir='/data/mysql8' g' /opt/mysql8/support-files/mysql.server
+sed -i 's lock_file_path="$lockdir/mysql" lock_file_path="/data/mysql8/mysql.lock" g' /opt/mysql8/support-files/mysql.server
+# 替换启动命令，增加默认配置文件选项。这里sed命令修改分隔符为井号（#），因为替换字符串中含有空格
+sed -i 's#$bindir/mysqld_safe --datadir#$bindir/mysqld_safe --defaults-file=/etc/my8.cnf --datadir#g' /opt/mysql8/support-files/mysql.server
+
+# 启动
+sudo -u mysql /opt/mysql8/support-files/mysql.server start
+
+# 使用临时密码登录，设置密码
+/opt/mysql8/bin/mysql -uroot –p -S /tmp/mysql8.sock
+mysql> ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'PASSWORD';
+mysql> ALTER USER 'root'@'localhost' PASSWORD EXPIRE NEVER;
+mysql> FLUSH PRIVILEGES; 
+```
+
+参考配置文件
+
+```properties
+# For advice on how to change settings please see
+# http://dev.mysql.com/doc/refman/5.6/en/server-configuration-defaults.html
+
+[mysqld]
+bind-address=0.0.0.0
+port=23306
+user=mysql
+#basedir=/usr/local/mysql
+datadir=/data/mysql8
+socket=/tmp/mysql8.sock
+log-error=/data/mysql8/mysql.err
+pid-file=/data/mysql8/mysql.pid
+transaction-isolation = READ-COMMITTED
+# Disabling symbolic-links is recommended to prevent assorted security risks
+symbolic-links=0
+lower_case_table_names=1
+max_connections = 1000
+character_set_server=utf8mb4
+init_connect='SET NAMES utf8'
+
+# Recommended in standard MySQL setup
+sql_mode=NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES
+
+# mysqld中后面这部分配置，是内存比较大的配置。如果不清楚，建议全部注释使用默认
+
+key_buffer_size = 32M
+max_allowed_packet = 16M
+thread_stack = 256K
+thread_cache_size = 64
+
+#expire_logs_days = 10
+#max_binlog_size = 100M
+#log_bin should be on a disk with enough free space.
+#Replace '/var/lib/mysql/mysql_binary_log' with an appropriate path for your
+#system and chown the specified folder to the mysql user.
+log_bin=/data/mysql8/mysql_binary_log
+
+#In later versions of MySQL, if you enable the binary log and do not set
+#a server_id, MySQL will not start. The server_id must be unique within
+#the replicating group.
+server_id=1
+binlog_format = mixed
+
+read_buffer_size = 2M
+read_rnd_buffer_size = 16M
+sort_buffer_size = 8M
+join_buffer_size = 8M
+
+# InnoDB settings
+innodb_file_per_table = 1
+innodb_flush_log_at_trx_commit  = 2
+innodb_log_buffer_size = 64M
+innodb_buffer_pool_size = 4G
+innodb_thread_concurrency = 8
+innodb_flush_method = O_DIRECT
+innodb_redo_log_capacity = 512M
+
+[mysqld_safe]
+
+[client]
+default-character-set=utf8
+
+[mysql]
+default-character-set=utf8
+```
