@@ -137,18 +137,44 @@ EOF
 
 指定备份文件所在位置，这样数据库会自动在该路径下找备份文件进行恢复。
 
+
+
 ```rman
-catalog start with '/home/oracle/bak/';
+shutdown immediate;
+STARTUP NOMOUNT;
+RESTORE CONTROLFILE FROM '/home/oracle/backup/manual/20250402/cntrl_1_5644.bak';
+ALTER DATABASE MOUNT;
+catalog start with '/home/oracle/backup/manual/20250402/';
 LIST BACKUP;
 LIST BACKUP SUMMARY;
-STARTUP MOUNT;
 crosscheck backup;
-delete expired backup;
-RESTORE DATABASE;
+RESTORE DATABASE SKIP TABLESPACE temp, example;
 RECOVER DATABASE;
 ALTER DATABASE OPEN;
 ```
+
+如果打开恢复目录报DBID不匹配，可以退出rman之后，重新进入使control file生效，如果仍然不行，则可以
+
+```rman
+STARTUP NOMOUNT;
+SET DBID 1664089791;
+ALTER DATABASE MOUNT;
+```
+
 如果目标端数据文件路径和源端不一致，还需要指定下新路径，示例：
+
+```rman
+SET NEWNAME FOR DATABASE TO '/oracle/oradata/ORCL/%b';
+```
+
+如果RECOVER报如下错误，则可以指定SCN恢复到指定时间点
+`RMAN-06054: media recovery requesting unknown archived log for thread 1 with sequence 191194 and starting SCN of 1315296512`
+
+```rman
+RECOVER DATABASE UNTIL SCN 1315296512;
+ALTER DATABASE OPEN RESETLOGS;
+```
+
 
 #### 表空间恢复
 
